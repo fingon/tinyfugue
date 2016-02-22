@@ -1367,7 +1367,9 @@ static int opensock(World *world, int flags)
 static const char *printai(struct addrinfo *ai, const char *fmt_hp)
 {
     static char buf[1024];
+#if ENABLE_INET6
     static char hostbuf[INET6_ADDRSTRLEN+1];
+#endif /* ENABLE_INET6 */
     const void *hostaddr = NULL;
     unsigned short port = 0;
     const char *host = NULL;
@@ -1471,7 +1473,7 @@ static int openconn(Sock *sock)
 # ifdef PLATFORM_UNIX
         if (xsock->pid >= 0)
             if (waitpid(xsock->pid, NULL, 0) < 0)
-               tfprintf(tferr, "waitpid: %ld: %s", xsock->pid, strerror(errno));
+              tfprintf(tferr, "waitpid: %d: %s", (int)xsock->pid, strerror(errno));
         xsock->pid = -1;
 # endif /* PLATFORM_UNIX */
         xsock->constate = SS_RESOLVED;
@@ -2600,7 +2602,7 @@ static void handle_socket_lines(void)
 	    socks_with_lines--;
 
 	if (line->attrs & (F_TFPROMPT)) {
-	    incoming_text = line;
+	    incoming_text = (String *)line;
 	    handle_prompt(incoming_text, 0, TRUE);
 	    continue;
 	}

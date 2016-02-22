@@ -1208,7 +1208,7 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	    {
 		struct tm tm;
 		time_t t;
-		unsigned int usec = 0;
+		int usec = 0;
 		tm.tm_sec  = 0;
 		tm.tm_min  = 0;
 		tm.tm_hour = 0;
