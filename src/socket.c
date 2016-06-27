@@ -215,7 +215,7 @@ static const char *h_errlist[] = {
  * Nonblocking connect will work on a system if the column contains a 'W'
  * and there is no 'F' above it; 'N' does not matter.  The order of the
  * tests is arranged to keep the 'F's below the 'W's.
- * 
+ *
  *                                                        S
  *                                                        o
  *                                      P           L  S  l     H
@@ -677,11 +677,11 @@ void main_loop(void)
         if (depth > 1 && interrupted()) break;
 
         /* deal with pending signals */
-        /* at loop beginning in case of signals before main_loop() */ 
+        /* at loop beginning in case of signals before main_loop() */
         process_signals();
 
         /* run processes */
-        /* at loop beginning in case of processes before main_loop() */ 
+        /* at loop beginning in case of processes before main_loop() */
         gettime(&now);
         if (proctime.tv_sec && tvcmp(&proctime, &now) <= 0)
 	    runall(0, NULL); /* run timed processes */
@@ -1867,7 +1867,7 @@ static int nonblocking_gethost(const char *name, const char *port,
 #ifdef PLATFORM_OS2
     {
         threadpara *tpara;
-  
+
         if ((tpara = XMALLOC(sizeof(threadpara)))) {
             setmode(fds[0],O_BINARY);
             setmode(fds[1],O_BINARY);
@@ -2879,7 +2879,6 @@ static void test_prompt(void)
 
 static void telnet_subnegotiation(void)
 {
-    unsigned int i;
     char *p;
     const char *end;
     char temp_buff[255]; /* Same length as whole subnegotiation line. */
@@ -2935,7 +2934,7 @@ static void telnet_subnegotiation(void)
 	}
 	if (*++p == '\01') { /* REQUEST <sep> <character set>... */
 	   charset_sep = *++p;
-	   while (p != end) {
+	   while (p != end && !newconverter) {
 	      temp_ptr = ++p;
 	      while (p != end && *p != charset_sep) {
 		  temp_buff[p - temp_ptr] = (*p & ~0x80);
@@ -2944,16 +2943,13 @@ static void telnet_subnegotiation(void)
 	      temp_buff[p - temp_ptr] = '\0';
 	      newconvertererr = U_ZERO_ERROR;
 	      newconverter = ucnv_open(temp_buff, &newconvertererr);
-	  /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
-	      if (newconverter != NULL) {
-		  p = end; /* Prefer the first valid charset! */
-	      }
+	      /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
 	   }
 	   if (newconverter != NULL) {
 	      Sprintf(telbuf, "%c%c%c%c%s%c%c", TN_IAC, TN_SB, TN_CHARSET, '\02', temp_buff, TN_IAC, TN_SE);
 	      /* TODO: Don't reset if we're already using this charset. */
 	      /* XXX: This breaks if we were scanning simbuffer. Dangit. */
-	      inbound_decode_str(xsock->buffer, xsock->incomingposttelnet, 
+	      inbound_decode_str(xsock->buffer, xsock->incomingposttelnet,
 	          xsock->incomingfsm, 1); /* 1; nothing else to convert */
 	      handle_socket_input_queue_lines(xsock);
 	      ucnv_close(xsock->incomingfsm);
@@ -3042,7 +3038,7 @@ static int inbound_decode(String *output, const char *input, const char *iendptr
     int32_t utf8written = 0;
 
     UBool flush = cflush ? TRUE : FALSE;
-    
+
     /* xcharset -> UTF-16 -> UTF-8 */
     ucnv_toUnicode(conv, &optr, oendptr, &iptr, iendptr, NULL, flush, &err16);
 /*
@@ -3053,7 +3049,7 @@ void ucnv_toUnicode 	( 	UConverter *  	converter,
 		const char *  	sourceLimit,
 		int32_t *  	offsets,
 		UBool  	flush,
-		UErrorCode *  	err 
+		UErrorCode *  	err
 	)
 */
     u_strToUTF8(outbufferUTF8, BUFFSIZE*8, &utf8written, outbufferUTF16, (int32_t)(optr - outbufferUTF16), &err8);
@@ -3063,8 +3059,8 @@ char* u_strToUTF8 	( 	char *  	dest,
 		int32_t *  	pDestLength,
 		const UChar *  	src,
 		int32_t  	srcLength,
-		UErrorCode *  	pErrorCode 
-	) 	
+		UErrorCode *  	pErrorCode
+	)
 */
     Stringfncat(output, outbufferUTF8, utf8written);
     if (U_FAILURE(err16) || U_FAILURE(err8))
@@ -3081,7 +3077,7 @@ char* u_strToUTF8 	( 	char *  	dest,
  */
 static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
 {
-    char rawchar, localchar, inbuffer[BUFFSIZE];
+    char rawchar, inbuffer[BUFFSIZE];
     const char *incoming, *place;
 #if HAVE_MCCP
     char mccpbuffer[BUFFSIZE];
@@ -3093,7 +3089,6 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
     String *incomingposttelnet;
     UConverter *incomingFSM = NULL;
     UErrorCode incomingERR;
-    int shiftby;
 #endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
@@ -3152,7 +3147,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 			return 0;
 		    /* Socket is blocking; EAGAIN and EWOULDBLOCK impossible. */
 #if WIDECHAR
-		    inbound_decode_str(xsock->buffer, incomingposttelnet, 
+		    inbound_decode_str(xsock->buffer, incomingposttelnet,
                         incomingFSM, 1);
 #endif
 		    if (xsock->buffer->len) { /* Destroy the buffers */
@@ -3206,7 +3201,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		    break;
 		default:
 #if WIDECHAR
-		    inbound_decode_str(xsock->buffer, incomingposttelnet, 
+		    inbound_decode_str(xsock->buffer, incomingposttelnet,
                         incomingFSM, 1);
 #endif
 		    flushxsock();
@@ -3537,7 +3532,6 @@ non_telnet:
 STATIC_BUFFER(nextline); /* Static for speed */
 static void handle_socket_input_queue_lines(Sock *sock)
 {
-    String *debug = sock->buffer;
     char *place;
     char *bufferend = sock->buffer->data + sock->buffer->len;
     char rawchar, localchar;
@@ -3801,10 +3795,10 @@ const char *world_info(const char *worldname, const char *fieldname)
 {
     World *world;
     const char *result;
- 
+
     world = worldname ? find_world(worldname) : xworld();
     if (!world) return ""; /* not an error */
- 
+
     if (!fieldname || strcmp("name", fieldname) == 0) {
         result = world->name;
     } else if (strcmp("type", fieldname) == 0) {
