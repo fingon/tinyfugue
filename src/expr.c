@@ -267,7 +267,7 @@ void freeval_fl(Value *val, const char *file, int line)
 {
     if (!val) return;
     if (--val->count > 0) return;
-    assert(val->count == 0); 
+    assert(val->count == 0);
     clearval_fl(val, file, line);
     if (val->name) {
         xfree(NULL, (void*)val->name, file, line);
@@ -365,7 +365,7 @@ int valtime(struct timeval *tvp, const Value *val)
         tvp->tv_usec = (long)((val->u.fval - ival) * 1000000);
         tvp->tv_sec = ival;
 #endif
-    }
+    } else goto valtime_error;
     return 1;
 
 valtime_error:
@@ -968,7 +968,7 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	    return_user_result();
 
         case FN_send:
-            i = handle_send_function(opdstr(n), (n>1 ? opdstd(n-1) : NULL), 
+            i = handle_send_function(opdstr(n), (n>1 ? opdstd(n-1) : NULL),
 		(n>2 ? opdstd(n-2) : ""));
             return newint(i);
 
@@ -1922,7 +1922,7 @@ static int primary_expr(Program *prog, int could_be_div_or_macro)
         parse_error(prog, "expression", "operand");
         return 0;
     }
-    
+
     eat_space(prog);
     return 1;
 }
